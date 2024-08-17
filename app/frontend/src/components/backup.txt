@@ -1,0 +1,282 @@
+const Quiz = () => {
+  const [quizes, setquizes] = useState([]);
+  const [inputs, setinputs] = useState({ topic: "", num_questions: 0 });
+  const [selectedOption, setSelectedOption] = useState("");
+  const [corectAnswers, setcorectAnswers] = useState([])
+
+  console.log(quizes);
+  console.log(selectedOption);
+
+  // Handler to update the selected option
+  const handleOptionChange = (event) => {
+    setSelectedOption(event.target.value);
+  };
+
+  const changeHandler = (e) => {
+    setinputs({ ...inputs, [e.target.name]: e.target.value });
+  };
+
+  const submitHandler = () => {
+    axios
+      .post("http://localhost:8000/generate_quiz", inputs)
+      .then((res) => {
+        // Check if res.data is an object and has the 'response' field
+        if (typeof res.data === "object" && res.data.response && res.statusText === "OK") {
+          // Extract the JSON string from the response field
+          const responseText = res.data.response;
+
+          // Find the start and end positions of the JSON content in the responseText
+          const jsonStart = responseText.indexOf("{");
+          const jsonEnd = responseText.lastIndexOf("}") + 1;
+
+          if (jsonStart !== -1 && jsonEnd !== -1) {
+            // Extract the JSON part
+            const jsonString = responseText.substring(jsonStart, jsonEnd);
+
+            try {
+              // Parse the extracted JSON string
+              const jsonData = JSON.parse(jsonString);
+              console.log("Parsed JSON data:", jsonData);
+              setquizes(jsonData.questions);
+              console.log(quizes);
+            } catch (error) {
+              console.error("Error parsing JSON:", error);
+            }
+          } else {
+            toast.error(res.data.response);
+          }
+        } else {
+          console.error("Invalid response format.");
+        }
+      })
+      .catch((error) => {
+        console.error("Error in request:", error);
+      });
+  };
+
+  return (
+    <>
+      <div className=" w-[70%] py-24 min-h-screen mx-auto rounded-lg">
+        <div className="quiz-section py-5 bg-white h-aato px-16">
+          <h1 className="text-center text-4xl font-medium w-[60%] mx-auto py-10">
+            Enter Quiz Topic And Number of Questions
+          </h1>
+          <div className="quz-topic-input w-full flex justify-center items-center gap-5">
+            <input
+              placeholder="Enter Topic"
+              className="bg-slate-100 outline-none w-[50%] text-sm py-2 px-3 rounded-lg border border-primary"
+              type="text"
+              name="topic"
+              onChange={changeHandler}
+              value={inputs.topic}
+            />
+            <input
+              placeholder="Enter No of Quiz"
+              className="bg-slate-100 outline-none w-[30%] text-sm py-2 px-3 rounded-lg border border-primary"
+              type="number"
+              name="num_questions"
+              onChange={changeHandler}
+              value={inputs.num_questions}
+            />
+            <button
+              onClick={submitHandler}
+              className="Genrate-btn w-[20%] py-2 px-10 border-2 text-white border-primary rounded-lg flex items-center justify-center gap-2 transition-all bg-primary hover:bg-transparent hover:text-black"
+            >
+              Generate
+            </button>
+          </div>
+          <div className="quiz-genrated-question flex flex-col gap-5 h-auto w-full my-10 rounded-lg">
+            {quizes.map((quiz, index) => {
+              return (
+                <>
+                  <div
+                    key={index}
+                    className="Quiz-1 w-full relative px-10 py-10 bg-slate-100"
+                  >
+                    <div
+                      className={`absolute ${
+                        selectedOption === quiz.correctAnswer
+                          ? "bg-green-500"
+                          : "bg-red-500"
+                      } top-0 right-0 m-5 text-2xl text-red-700`}
+                    >
+                      x
+                    </div>
+                    <h1 className="text-lg font-medium pb-5">
+                      {quiz.question}
+                    </h1>
+                    <div className="options grid text-[18px] grid-cols-2 gap-2 grid-rows-2">
+                      <div className="option-1 w-full flex items-start gap-2 ">
+                        <input
+                          onClick={handleOptionChange}
+                          checked={selectedOption === quiz.options.A}
+                          value={quiz.options.A}
+                          type="checkbox"
+                          name="A"
+                          className="rounded-full border-none w-5 h-5"
+                        />{" "}
+                        <p className="w-[90%]">{quiz.options.A}</p>
+                      </div>
+                      <div className="option-2 flex items-start gap-2">
+                        <input
+                          onClick={handleOptionChange}
+                          checked={selectedOption === quiz.options.B}
+                          value={quiz.options.B}
+                          type="checkbox"
+                          name="B"
+                          className="rounded-full border-none w-5 h-5"
+                        />{" "}
+                        <p className="w-[90%]">{quiz.options.B}</p>
+                      </div>
+                      <div className="option-3 flex items-start gap-2">
+                        <input
+                          onClick={handleOptionChange}
+                          checked={selectedOption === quiz.options.C}
+                          value={quiz.options.C}
+                          type="checkbox"
+                          name="C"
+                          className="rounded-full border-none w-5 h-5"
+                        />{" "}
+                        <p className="w-[90%]">{quiz.options.C}</p>
+                      </div>
+                      <div className="option-4 flex items-start gap-2">
+                        <input
+                          onChange={handleOptionChange}
+                          checked={selectedOption === quiz.options.D}
+                          value={quiz.options.D}
+                          type="checkbox"
+                          name="D"
+                          className="rounded-full border-none w-5 h-5"
+                        />{" "}
+                        <p className="w-[90%]">{quiz.options.D}</p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              );
+            })}
+            <div className={`submit-quiz ${quizes.length === 0 ? "hidden" : "flex"} justify-center gap-4 w-full`}>
+              <button className=" w-[40%] text-center py-2 px-10 border-2 text-white border-primary rounded-lg gap-2 transition-all bg-primary hover:bg-transparent hover:text-black">
+                Submit
+              </button>
+            </div>
+            {/* <div className="Quiz-1 w-full relative px-10 py-10 bg-slate-100 rounded-md overflow-hidden">
+              <div
+                className={`absolute ${
+                  selectedOption === "Python" ? "bg-green-500" : "bg-red-500"
+                } top-0 right-0 text-2xl p-3 text-white`}
+              >
+                x
+              </div>
+              <h1 className="text-lg font-medium pb-5">What you like</h1>
+              <div className="options grid text-[18px] grid-cols-2 gap-2 grid-rows-2">
+                <div className="option-1 w-full flex items-start gap-2 ">
+                  <input
+                    onClick={handleOptionChange}
+                    checked={selectedOption === "Web"}
+                    value={"Web"}
+                    type="checkbox"
+                    name="A"
+                    className="rounded-full border-none w-5 h-5"
+                  />{" "}
+                  <p className="w-[90%]">Web</p>
+                </div>
+                <div className="option-2 flex items-start gap-2">
+                  <input
+                    onClick={handleOptionChange}
+                    checked={selectedOption === "Word"}
+                    value={"Word"}
+                    type="checkbox"
+                    name="B"
+                    className="rounded-full border-none w-5 h-5"
+                  />{" "}
+                  <p className="w-[90%]">Word</p>
+                </div>
+                <div className="option-3 flex items-start gap-2">
+                  <input
+                    onClick={handleOptionChange}
+                    checked={selectedOption === "Python"}
+                    value={"Python"}
+                    type="checkbox"
+                    name="C"
+                    className="rounded-full border-none w-5 h-5"
+                  />{" "}
+                  <p className="w-[90%]">Python</p>
+                </div>
+                <div className="option-4 flex items-start gap-2">
+                  <input
+                    onChange={handleOptionChange}
+                    checked={selectedOption === "Dev"}
+                    value={"Dev"}
+                    type="checkbox"
+                    name="D"
+                    className="rounded-full border-none w-5 h-5"
+                  />{" "}
+                  <p className="w-[90%]">Dev</p>
+                </div>
+              </div>
+            </div>
+            <div className="Quiz-1 w-full relative px-10 py-10 bg-slate-100 rounded-md overflow-hidden">
+              <div
+                className={`absolute ${
+                  selectedOption === "Python" ? "bg-green-500" : "bg-red-500"
+                } top-0 right-0 text-2xl p-3 text-white`}
+              >
+                x
+              </div>
+              <h1 className="text-lg font-medium pb-5">What you like</h1>
+              <div className="options grid text-[18px] grid-cols-2 gap-2 grid-rows-2">
+                <div className="option-1 w-full flex items-start gap-2 ">
+                  <input
+                    onClick={handleOptionChange}
+                    checked={selectedOption === "Web"}
+                    value={"Web"}
+                    type="checkbox"
+                    name="A"
+                    className="rounded-full border-none w-5 h-5"
+                  />{" "}
+                  <p className="w-[90%]">Web</p>
+                </div>
+                <div className="option-2 flex items-start gap-2">
+                  <input
+                    onClick={handleOptionChange}
+                    checked={selectedOption === "Word"}
+                    value={"Word"}
+                    type="checkbox"
+                    name="B"
+                    className="rounded-full border-none w-5 h-5"
+                  />{" "}
+                  <p className="w-[90%]">Word</p>
+                </div>
+                <div className="option-3 flex items-start gap-2">
+                  <input
+                    onClick={handleOptionChange}
+                    checked={selectedOption === "Python"}
+                    value={"Python"}
+                    type="checkbox"
+                    name="C"
+                    className="rounded-full border-none w-5 h-5"
+                  />{" "}
+                  <p className="w-[90%]">Python</p>
+                </div>
+                <div className="option-4 flex items-start gap-2">
+                  <input
+                    onChange={handleOptionChange}
+                    checked={selectedOption === "Dev"}
+                    value={"Dev"}
+                    type="checkbox"
+                    name="D"
+                    className="rounded-full border-none w-5 h-5"
+                  />{" "}
+                  <p className="w-[90%]">Dev</p>
+                </div>
+              </div>
+            </div> */}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default Quiz;
